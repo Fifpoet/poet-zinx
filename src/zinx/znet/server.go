@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -14,6 +15,16 @@ type Server struct {
 	IPVersion string
 	IP        string
 	Port      int
+}
+
+func CallBackFunc(conn *net.TCPConn, data []byte, cnt int) error {
+	// 封装回显业务逻辑
+	fmt.Println("[INFO] CallBackFunc running")
+	if _, err := conn.Write(data[:cnt]); err != nil {
+		fmt.Println("[ERROR] Write back buf err ", err)
+		return errors.New("CallBackToClient error")
+	}
+	return nil
 }
 
 func (s Server) Start() {
@@ -32,7 +43,8 @@ func (s Server) Start() {
 			return
 		}
 		fmt.Println("[Info] Start ZINX Server successfully!" + "server name: {" + s.Name + "}")
-
+		var cid uint32
+		cid = 0
 		// 3 忙循环接受TCP连接
 		for {
 			conn, err := listener.AcceptTCP()
@@ -41,22 +53,9 @@ func (s Server) Start() {
 				continue
 			}
 			// TODO 超过TCP连接数则关闭新连接
-			// 协程嵌套
-			go func() {
-				for {
-					buf := make([]byte, 512)
-					cnt, err := conn.Read(buf)
-					if err != nil {
-						fmt.Println("[Error] Receive bytes Error")
-						continue
-					}
-					// 接受到字节后 回显到客户端. 此时的buf中只读到了前cnt个字节
-					if _, err := conn.Write(buf[:cnt]); err != nil {
-						fmt.Println("[Error] Write back buf err ", err)
-						continue
-					}
-				}
-			}()
+			dealConn := NewConnection(conn, cid, CallBackFunc)
+			cid++
+			go dealConn.Start()
 		}
 	}()
 }
