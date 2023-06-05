@@ -8,6 +8,7 @@ import (
 	"zinx/src/zinx/ziface"
 )
 
+// Server 封装服务器信息，起循环监听特定地址
 type Server struct {
 	// 服务器名称
 	Name string

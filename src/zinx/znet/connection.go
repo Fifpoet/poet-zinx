@@ -6,6 +6,7 @@ import (
 	"zinx/src/zinx/ziface"
 )
 
+// Connection 封装每一个连接，绑定对应的业务逻辑
 type Connection struct {
 	// TCP连接的原始套接字
 	Conn     *net.TCPConn
@@ -13,7 +14,7 @@ type Connection struct {
 	isClosed bool
 	// 处理函数
 	handlerFunc ziface.HandFunc
-	// 用于阻塞
+	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
 }
 
