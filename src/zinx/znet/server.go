@@ -40,7 +40,7 @@ func CallBackFunc(conn *net.TCPConn, data []byte, cnt int) error {
 	return nil
 }
 
-func (s Server) Start() {
+func (s *Server) Start() {
 	fmt.Printf("[Start] Server listenner at IP: %s, Port %d, is starting\n", s.IP, s.Port)
 	go func() {
 		// 1 获取TCP连接对象
@@ -55,7 +55,7 @@ func (s Server) Start() {
 			fmt.Println("listen", s.IPVersion, "err", err)
 			return
 		}
-		fmt.Println("[Info] Start ZINX Server successfully!" + "server name: {" + s.Name + "}")
+		fmt.Println("[INFO] Start ZINX Server successfully!" + "server name: {" + s.Name + "}")
 		var cid uint32
 		cid = 0
 		// 3 忙循环接受TCP连接
@@ -66,19 +66,19 @@ func (s Server) Start() {
 				continue
 			}
 			// TODO 超过TCP连接数则关闭新连接
-			dealConn := NewConnection(conn, cid, CallBackFunc)
+			dealConn := NewConnection(conn, cid, s.Router)
 			cid++
 			go dealConn.Start()
 		}
 	}()
 }
 
-func (s Server) Stop() {
+func (s *Server) Stop() {
 	fmt.Println("[Stop] Server stopped, name:{" + s.Name + "}")
 	// TODO 释放连接资源
 }
 
-func (s Server) Serve() {
+func (s *Server) Serve() {
 	s.Start()
 	// 启动后处理
 
@@ -86,4 +86,8 @@ func (s Server) Serve() {
 	for {
 		time.Sleep(10 * time.Second)
 	}
+}
+
+func (s *Server) AddRouter(router ziface.IRouter) {
+	s.Router = router
 }

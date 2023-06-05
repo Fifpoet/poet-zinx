@@ -29,8 +29,8 @@ func NewConnection(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Con
 }
 
 func (c *Connection) StartReader() {
-	fmt.Printf("[INFO] Reader Gorountine is running")
-	defer fmt.Printf("[INFO] Reader Closed")
+	fmt.Println("[INFO] Reader Gorountine is running")
+	defer fmt.Println("[INFO] Reader Closed")
 	defer c.Stop()
 
 	//读取客户端字节流
@@ -47,6 +47,7 @@ func (c *Connection) StartReader() {
 			data: buf,
 		}
 		go func(request ziface.IRequest) {
+			fmt.Println("[INFO] Run Router")
 			c.Router.PreHandler(request)
 			c.Router.Handler(request)
 			c.Router.PostHandler(request)
