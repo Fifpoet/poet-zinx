@@ -7,7 +7,7 @@ type Request struct {
 	data []byte
 }
 
-func (r *Request) GetConnection() interface{} {
+func (r *Request) GetConnection() ziface.IConnection {
 	return r.conn
 }
 

@@ -5,4 +5,6 @@ type IServer interface {
 	Stop()
 	// Serve 开启业务服务方法
 	Serve()
+	// AddRouter 为一个服务注册业务路由
+	AddRouter(router IRouter)
 }

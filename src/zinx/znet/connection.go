@@ -12,16 +12,15 @@ type Connection struct {
 	Conn     *net.TCPConn
 	ConnID   uint32
 	isClosed bool
-	// 处理函数
-	handlerFunc ziface.HandFunc
+	Router   ziface.IRouter
 	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, callBack ziface.HandFunc) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Connection {
 	c := &Connection{
 		isClosed:    false,
-		handlerFunc: callBack,
+		Router:      router,
 		Conn:        conn,
 		ConnID:      connID,
 		ExitBufChan: make(chan bool, 1),
@@ -37,18 +36,21 @@ func (c *Connection) StartReader() {
 	//读取客户端字节流
 	for {
 		buf := make([]byte, 512)
-		cnt, err := c.Conn.Read(buf)
+		_, err := c.Conn.Read(buf)
 		if err != nil {
 			c.ExitBufChan <- true
 			fmt.Printf("[Error] Read bytes error")
 			continue
 		}
-		//出错后调用handler
-		if err := c.handlerFunc(c.Conn, buf, cnt); err != nil {
-			fmt.Printf("[Error] Handler Func Error")
-			c.ExitBufChan <- true
-			return
+		req := Request{
+			conn: c,
+			data: buf,
 		}
+		go func(request ziface.IRequest) {
+			c.Router.PreHandler(request)
+			c.Router.Handler(request)
+			c.Router.PostHandler(request)
+		}(&req)
 	}
 }
 
