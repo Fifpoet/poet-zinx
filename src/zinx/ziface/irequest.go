@@ -1,6 +1,6 @@
 package ziface
 
 type IRequest interface {
-	GetConnection() iConnection
+	GetConnection() IConnection
 	GetData() []byte
 }
