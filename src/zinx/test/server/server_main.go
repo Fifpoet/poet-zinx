@@ -11,16 +11,11 @@ type PingRouter struct {
 	znet.BaseRouter
 }
 
-func (p *PingRouter) PreHandler(request ziface.IRequest) {
-	// 回写到客户端显示
-	fmt.Println("[INFO] PreHandler run! ")
-}
-
 func (p *PingRouter) Handler(request ziface.IRequest) {
 	fmt.Println("[INFO] Handler run! ")
-	_, err := request.GetConnection().GetTCPConnection().Write([]byte("ping...ping...ping\n"))
+	err := request.GetConnection().SendMsg(1, []byte("ping...ping...ping"))
 	if err != nil {
-		fmt.Println("[Error] Write back error")
+		fmt.Println(err)
 	}
 }
 
