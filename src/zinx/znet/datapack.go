@@ -21,6 +21,7 @@ func (dp *DataPack) GetHeadLen() uint32 {
 	return 8
 }
 
+// Pack msg -> msgId + dataLen + data
 func (dp *DataPack) Pack(msg ziface.IMessage) ([]byte, error) {
 	// TODO ？与直接new byte的区别
 	dataBuff := bytes.NewBuffer([]byte{})

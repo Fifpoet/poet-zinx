@@ -1,6 +1,7 @@
 package znet
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -74,6 +75,27 @@ func (c *Connection) StartReader() {
 			c.Router.PostHandler(request)
 		}(&req)
 	}
+}
+
+// SendMsg 提供封包方法 快捷的把发送的[]byte转换为msg
+func (c *Connection) SendMsg(msgId uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("connection closed when send msg")
+	}
+	dp := NewDataPack()
+	msgBytes, err := dp.Pack(NewMessage(msgId, data))
+	if err != nil {
+		fmt.Println("[ERROR] Pack error msg id = ", msgId)
+		return errors.New("Pack error msg ")
+	}
+
+	//回写到客户端
+	if _, err := c.Conn.Write(msgBytes); err != nil {
+		fmt.Println("Write msg id {", msgId, "} error ")
+		c.ExitBufChan <- true
+		return errors.New("conn Write error")
+	}
+	return nil
 }
 
 func (c *Connection) Start() {
