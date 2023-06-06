@@ -6,6 +6,15 @@ type Message struct {
 	Data    []byte
 }
 
+func NewMessage(id uint32, data []byte) *Message {
+	m := &Message{
+		Id:      id,
+		DataLen: uint32(len(data)),
+		Data:    data,
+	}
+	return m
+}
+
 func (m *Message) GetDataLen() uint32 {
 	return m.DataLen
 }
