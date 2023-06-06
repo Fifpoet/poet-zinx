@@ -1,10 +1,10 @@
 package znet
 
 import (
-	"errors"
 	"fmt"
 	"net"
 	"time"
+	"zinx/src/zinx/utils"
 	"zinx/src/zinx/ziface"
 )
 
@@ -19,9 +19,19 @@ type Server struct {
 	Router    ziface.IRouter
 }
 
-func NewServer(name string) *Server {
+// NewServer 更新硬编码为从json文件读取
+func NewServer() ziface.IServer { // TODO 使用接口还是Server
+	//utils.GlobalConfig.ReloadConfig()
+	//conf := utils.GlobalConfig
+	//s := &Server{
+	//	Name:      conf.Name,
+	//	IPVersion: conf.Version,
+	//	IP:        conf.Host,
+	//	Port:      conf.TcpPort,
+	//	Router:    nil,
+	//}
 	s := &Server{
-		Name:      name,
+		Name:      "FIF",
 		IPVersion: "tcp4",
 		IP:        "0.0.0.0",
 		Port:      7777,
@@ -30,19 +40,13 @@ func NewServer(name string) *Server {
 	return s
 }
 
-func CallBackFunc(conn *net.TCPConn, data []byte, cnt int) error {
-	// 封装回显业务逻辑
-	fmt.Println("[INFO] CallBackFunc running")
-	if _, err := conn.Write(data[:cnt]); err != nil {
-		fmt.Println("[ERROR] Write back buf err ", err)
-		return errors.New("CallBackToClient error")
-	}
-	return nil
-}
-
 func (s *Server) Start() {
 	fmt.Printf("[Start] Server listenner at IP: %s, Port %d, is starting\n", s.IP, s.Port)
 	go func() {
+		// 0 查看全局配置
+		fmt.Println("host: " + utils.GlobalConfig.Host)
+		fmt.Println("name: " + utils.GlobalConfig.Name)
+		fmt.Println("version: " + utils.GlobalConfig.Version)
 		// 1 获取TCP连接对象
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
