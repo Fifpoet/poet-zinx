@@ -11,18 +11,18 @@ import (
 // Connection 封装每一个连接，绑定对应的业务逻辑
 type Connection struct {
 	// TCP连接的原始套接字
-	Conn     *net.TCPConn
-	ConnID   uint32
-	isClosed bool
-	Router   ziface.IRouter
+	Conn       *net.TCPConn
+	ConnID     uint32
+	isClosed   bool
+	MsgHandler ziface.IMsgHandler
 	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, router ziface.IRouter) *Connection {
+func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
 	c := &Connection{
 		isClosed:    false,
-		Router:      router,
+		MsgHandler:  handler,
 		Conn:        conn,
 		ConnID:      connID,
 		ExitBufChan: make(chan bool, 1),
@@ -70,9 +70,7 @@ func (c *Connection) StartReader() {
 		}
 		go func(request ziface.IRequest) {
 			fmt.Println("[INFO] Run Router")
-			c.Router.PreHandler(request)
-			c.Router.Handler(request)
-			c.Router.PostHandler(request)
+			c.MsgHandler.DoMsgHandler(request)
 		}(&req)
 	}
 }

@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 
-	for i := 1; i < 100; i++ {
+	for i := 1; i < 3; i++ {
 		var msg []byte
 		dp := znet.NewDataPack()
 		msg, _ = dp.Pack(znet.NewMessage(uint32(i), []byte(fmt.Sprintf("Hello, %d", i))))

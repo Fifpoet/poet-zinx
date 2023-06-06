@@ -13,10 +13,10 @@ type Server struct {
 	// 服务器名称
 	Name string
 	// IP协议的版本 IP地址 端口
-	IPVersion string
-	IP        string
-	Port      int
-	Router    ziface.IRouter
+	IPVersion  string
+	IP         string
+	Port       int
+	MsgHandler ziface.IMsgHandler
 }
 
 // NewServer 更新硬编码为从json文件读取
@@ -31,11 +31,11 @@ func NewServer() ziface.IServer { // TODO 使用接口还是Server
 	//	Router:    nil,
 	//}
 	s := &Server{
-		Name:      "FIF",
-		IPVersion: "tcp4",
-		IP:        "0.0.0.0",
-		Port:      7777,
-		Router:    nil,
+		Name:       "FIF",
+		IPVersion:  "tcp4",
+		IP:         "0.0.0.0",
+		Port:       7777,
+		MsgHandler: NewMsgHandle(),
 	}
 	return s
 }
@@ -70,7 +70,7 @@ func (s *Server) Start() {
 				continue
 			}
 			// TODO 超过TCP连接数则关闭新连接
-			dealConn := NewConnection(conn, cid, s.Router)
+			dealConn := NewConnection(conn, cid, s.MsgHandler)
 			cid++
 			go dealConn.Start()
 		}
@@ -92,6 +92,6 @@ func (s *Server) Serve() {
 	}
 }
 
-func (s *Server) AddRouter(router ziface.IRouter) {
-	s.Router = router
+func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
+	s.MsgHandler.AddRouter(msgId, router)
 }
