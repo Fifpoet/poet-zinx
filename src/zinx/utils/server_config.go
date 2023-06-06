@@ -46,5 +46,5 @@ func init() {
 
 	// TODO 读取config
 	//从配置文件中加载一些用户配置的参数
-	GlobalConfig.ReloadConfig()
+	//GlobalConfig.ReloadConfig()
 }

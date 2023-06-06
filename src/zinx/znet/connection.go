@@ -2,6 +2,7 @@ package znet
 
 import (
 	"fmt"
+	"io"
 	"net"
 	"zinx/src/zinx/ziface"
 )
@@ -33,18 +34,38 @@ func (c *Connection) StartReader() {
 	defer fmt.Println("[INFO] Reader Closed")
 	defer c.Stop()
 
-	//读取客户端字节流
+	//由读取字节流 改成
 	for {
-		buf := make([]byte, 512)
-		_, err := c.Conn.Read(buf)
-		if err != nil {
+		dp := NewDataPack()
+		// 1. 读Head
+		headData := make([]byte, dp.GetHeadLen()) //TODO ReadFull 函数, 需要指定slice的cap
+		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
+			fmt.Println("read msg head error ", err)
 			c.ExitBufChan <- true
-			fmt.Printf("[Error] Read bytes error")
 			continue
 		}
+		// 2. 先解包Head
+		msg, err := dp.UnPack(headData)
+		if err != nil {
+			fmt.Println("[ERROR] unpack error ", err)
+			c.ExitBufChan <- true
+			continue
+		}
+		// 3. 按照DataPack的形式按长度读取data
+		var data []byte
+		if msg.GetDataLen() > 0 {
+			data = make([]byte, msg.GetDataLen())
+			if _, err := io.ReadFull(c.GetTCPConnection(), data); err != nil {
+				fmt.Println("[ERROR] read msg data error ", err)
+				c.ExitBufChan <- true
+				continue
+			}
+		}
+		msg.SetData(data)
+
 		req := Request{
 			conn: c,
-			data: buf,
+			msg:  msg,
 		}
 		go func(request ziface.IRequest) {
 			fmt.Println("[INFO] Run Router")
