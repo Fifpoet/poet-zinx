@@ -46,7 +46,7 @@ func (c *Connection) StartReader() {
 			continue
 		}
 		// 2. 先解包Head
-		msg, err := dp.UnPack(headData)
+		msg, err := dp.Unpack(headData)
 		if err != nil {
 			fmt.Println("[ERROR] unpack error ", err)
 			c.ExitBufChan <- true

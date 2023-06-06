@@ -33,7 +33,7 @@ func main() {
 			return
 		}
 		//将headData字节流 拆包到msg中
-		msgHead, err := dp.UnPack(headData)
+		msgHead, err := dp.Unpack(headData)
 		if err != nil {
 			fmt.Println("server unpack err:", err)
 			return

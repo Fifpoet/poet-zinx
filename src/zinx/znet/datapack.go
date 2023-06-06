@@ -41,7 +41,7 @@ func (dp *DataPack) Pack(msg ziface.IMessage) ([]byte, error) {
 	return dataBuff.Bytes(), nil
 }
 
-func (dp *DataPack) UnPack(data []byte) (ziface.IMessage, error) {
+func (dp *DataPack) Unpack(data []byte) (ziface.IMessage, error) {
 	dataBuff := bytes.NewReader(data)
 	msg := &Message{}
 	//读dataLen

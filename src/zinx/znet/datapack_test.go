@@ -7,7 +7,7 @@ import (
 
 func TestDataPack(t *testing.T) {
 	pack := DataPack{}
-	unPack, err := pack.UnPack([]byte{11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11})
+	unPack, err := pack.Unpack([]byte{11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11, 11})
 	if err != nil {
 		fmt.Println(err.Error())
 		return
