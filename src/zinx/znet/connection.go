@@ -62,7 +62,7 @@ func (c *Connection) StartReader() {
 		headData := make([]byte, dp.GetHeadLen())
 		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
 			fmt.Println("read msg head error ", err)
-			c.ExitBufChan <- true
+			c.ExitBufChan <- true // TODO 给到退出消息后，主线程不能立马select到，这里会多次执行
 			continue
 		}
 		// 2. 先解包Head
@@ -88,10 +88,7 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		go func(request ziface.IRequest) {
-			fmt.Println("[INFO] Run Router")
-			c.MsgHandler.DoMsgHandler(request)
-		}(&req)
+		go c.MsgHandler.DoMsgHandler(&req)
 	}
 }
 
@@ -119,7 +116,8 @@ func (c *Connection) Start() {
 	for {
 		select {
 		case <-c.ExitBufChan:
-			//在chan中得到了退出的消息（一个bool值）程序退出
+			//在chan中得到了退出的消息（true）程序退出
+			fmt.Println("[INFO] Receive ExitBuf")
 			return
 		}
 	}
