@@ -6,7 +6,6 @@ type IConnection interface {
 	Start()
 	Stop()
 	GetConnID() uint32
+	GetTCPConnection() *net.TCPConn
+	SendMsg(msgId uint32, data []byte) error
 }
-
-// HandFunc 统一处理业务链接
-type HandFunc func(*net.TCPConn, []byte, int) error
