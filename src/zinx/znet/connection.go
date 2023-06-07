@@ -11,6 +11,8 @@ import (
 
 // Connection 封装每一个连接，绑定对应的业务逻辑
 type Connection struct {
+	// conn可以感知隶属的server对象
+	TcpServer ziface.IServer
 	// TCP连接的原始套接字
 	Conn       *net.TCPConn
 	ConnID     uint32
@@ -19,17 +21,22 @@ type Connection struct {
 	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
 	MsgChan     chan []byte
+	// 有缓冲管道
+	MsgBuffChan chan []byte
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
 	c := &Connection{
+		TcpServer:   server,
 		isClosed:    false,
 		MsgHandler:  handler,
 		Conn:        conn,
 		ConnID:      connID,
 		ExitBufChan: make(chan bool, 1),
 		MsgChan:     make(chan []byte, 1),
+		MsgBuffChan: make(chan []byte),
 	}
+	c.TcpServer.GetConnManager().Add(c) // 获得server并add自己
 	return c
 }
 
@@ -139,8 +146,12 @@ func (c *Connection) Stop() {
 		return
 	}
 	c.ExitBufChan <- true
+	// 把conn从管理器中删除
+	c.TcpServer.GetConnManager().Remove(c)
 	// 释放连接中的chan
 	close(c.ExitBufChan)
+	close(c.MsgBuffChan)
+	close(c.MsgChan)
 }
 
 // GetConnID 获取封装的Connection对象ID

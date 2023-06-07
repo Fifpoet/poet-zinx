@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"time"
+	"zinx/src/zinx/utils"
 	"zinx/src/zinx/ziface"
 )
 
@@ -12,29 +13,22 @@ type Server struct {
 	// 服务器名称
 	Name string
 	// IP协议的版本 IP地址 端口
-	IPVersion  string
-	IP         string
-	Port       int
-	MsgHandler ziface.IMsgHandler
+	IPVersion   string
+	IP          string
+	Port        int
+	MsgHandler  ziface.IMsgHandler
+	ConnManager ziface.IConnManager
 }
 
 // NewServer 更新硬编码为从json文件读取
 func NewServer() ziface.IServer { // TODO 使用接口还是Server
-	//utils.GlobalConfig.ReloadConfig()
-	//conf := utils.GlobalConfig
-	//s := &Server{
-	//	Name:      conf.Name,
-	//	IPVersion: conf.Version,
-	//	IP:        conf.Host,
-	//	Port:      conf.TcpPort,
-	//	Router:    nil,
-	//}
 	s := &Server{
-		Name:       "FIF",
-		IPVersion:  "tcp4",
-		IP:         "0.0.0.0",
-		Port:       7777,
-		MsgHandler: NewMsgHandle(),
+		Name:        "FIF",
+		IPVersion:   "tcp4",
+		IP:          "0.0.0.0",
+		Port:        7777,
+		MsgHandler:  NewMsgHandle(),
+		ConnManager: NewConnManager(),
 	}
 	return s
 }
@@ -66,8 +60,13 @@ func (s *Server) Start() {
 				fmt.Println("[Error] Accept TCP Connection Error")
 				continue
 			}
-			// TODO 超过TCP连接数则关闭新连接
-			dealConn := NewConnection(conn, cid, s.MsgHandler)
+			// 超过TCP连接数则关闭新连接
+			if s.ConnManager.Len() > utils.GlobalConfig.MaxConn {
+				_ = conn.Close()
+				continue
+			}
+			dealConn := NewConnection(s, conn, cid, s.MsgHandler)
+			s.ConnManager.Add(dealConn)
 			cid++ //TODO 线程安全？？
 			go dealConn.Start()
 		}
@@ -76,7 +75,8 @@ func (s *Server) Start() {
 
 func (s *Server) Stop() {
 	fmt.Println("[Stop] Server stopped, name:{" + s.Name + "}")
-	// TODO 释放连接资源
+	// 释放所有连接资源
+	s.ConnManager.ClearConn()
 }
 
 func (s *Server) Serve() {
@@ -91,4 +91,8 @@ func (s *Server) Serve() {
 
 func (s *Server) AddRouter(msgId uint32, router ziface.IRouter) {
 	s.MsgHandler.AddRouter(msgId, router)
+}
+
+func (s *Server) GetConnManager() ziface.IConnManager {
+	return s.ConnManager
 }

@@ -7,4 +7,5 @@ type IServer interface {
 	Serve()
 	// AddRouter 为一个服务注册业务路由
 	AddRouter(msgId uint32, router IRouter)
+	GetConnManager() IConnManager
 }
