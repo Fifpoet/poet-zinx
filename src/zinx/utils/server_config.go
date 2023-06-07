@@ -8,14 +8,27 @@ import (
 )
 
 type ServerConfig struct {
-	TcpServer     ziface.IServer `json:"tcp_server,omitempty"`      //当前Zinx的全局Server对象
-	Host          string         `json:"host,omitempty"`            //当前服务器主机IP
-	TcpPort       int            `json:"tcp_port,omitempty"`        //当前服务器主机监听端口号
-	Name          string         `json:"name,omitempty"`            //当前服务器名称
-	Version       string         `json:"version,omitempty"`         //当前Zinx版本号
-	MaxPacketSize uint32         `json:"max_packet_size,omitempty"` //都需数据包的最大值
-	MaxConn       int            `json:"max_conn,omitempty"`        //当前服务器主机允许的最大链接个数
-	Test          json.RawMessage
+	/*
+		Server
+	*/
+	TcpServer ziface.IServer //当前Zinx的全局Server对象
+	Host      string         //当前服务器主机IP
+	TcpPort   int            //当前服务器主机监听端口号
+	Name      string         //当前服务器名称
+
+	/*
+		Zinx
+	*/
+	Version          string //当前Zinx版本号
+	MaxPacketSize    uint32 //都需数据包的最大值
+	MaxConn          int    //当前服务器主机允许的最大链接个数
+	WorkerPoolSize   uint32 //业务工作Worker池的数量
+	MaxWorkerTaskLen uint32 //业务工作Worker对应负责的任务队列最大任务存储数量
+
+	/*
+		config file path
+	*/
+	ConfFilePath string
 }
 
 var GlobalConfig *ServerConfig
@@ -36,14 +49,17 @@ func (s *ServerConfig) ReloadConfig() {
 func init() {
 	//初始化GlobalObject变量，设置一些默认值
 	GlobalConfig = &ServerConfig{
-		Name:          "ZinxApp",
-		Version:       "V0.4",
-		TcpPort:       7777,
-		Host:          "0.0.0.0",
-		MaxConn:       12000,
-		MaxPacketSize: 4096,
+		TcpServer:        nil,
+		Host:             "0.0.0.0",
+		TcpPort:          7777,
+		Name:             "FIF",
+		Version:          "v0.7",
+		MaxPacketSize:    4096,
+		MaxConn:          500,
+		WorkerPoolSize:   10,
+		MaxWorkerTaskLen: 1024,
+		ConfFilePath:     "conf/zinx.json",
 	}
-
 	// TODO 读取config
 	//从配置文件中加载一些用户配置的参数
 	//GlobalConfig.ReloadConfig()
