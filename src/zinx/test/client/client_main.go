@@ -15,7 +15,7 @@ func main() {
 		return
 	}
 
-	for i := 1; i < 2; i++ {
+	for i := 1; i < 15; i++ {
 		var msg []byte
 		dp := znet.NewDataPack()
 		msg, _ = dp.Pack(znet.NewMessage(uint32(i), []byte(fmt.Sprintf("Hello, %d", i))))
@@ -39,20 +39,20 @@ func main() {
 			return
 		}
 		if msgHead.GetDataLen() > 0 {
-			//msg 是有data数据的，需要再次读取data数据
-			msg := msgHead.(*znet.Message)
-			msg.Data = make([]byte, msg.GetDataLen())
+			//receiveMsg 是有data数据的，需要再次读取data数据
+			receiveMsg := msgHead.(*znet.Message)
+			receiveMsg.Data = make([]byte, receiveMsg.GetDataLen())
 
 			//根据dataLen从io中读取字节流
-			_, err := io.ReadFull(conn, msg.Data)
+			_, err := io.ReadFull(conn, receiveMsg.Data)
 			if err != nil {
 				fmt.Println("server unpack data err:", err)
 				return
 			}
 
-			fmt.Println("==> Recv Msg: ID=", msg.Id, ", len=", msg.DataLen, ", data=", string(msg.Data))
+			fmt.Println("==> Receive Msg: ID=", receiveMsg.Id, ", len=", receiveMsg.DataLen, ", data=", string(receiveMsg.Data))
 		}
 
-		time.Sleep(2 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }

@@ -35,6 +35,15 @@ func main() {
 	s := znet.NewServer()
 	s.AddRouter(1, &PingRouter{})
 	s.AddRouter(2, &HelloRouter{})
+	s.AddRouter(3, &HelloRouter{})
+	s.AddRouter(4, &HelloRouter{})
+	s.AddRouter(5, &HelloRouter{})
+	s.AddRouter(6, &HelloRouter{})
+	s.AddRouter(7, &HelloRouter{})
+	s.AddRouter(8, &HelloRouter{})
+	s.AddRouter(9, &HelloRouter{})
+	//s.AddRouter(10, &HelloRouter{})
+	//s.AddRouter(11, &HelloRouter{})
 	s.Serve()
 
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net"
 	"time"
-	"zinx/src/zinx/utils"
 	"zinx/src/zinx/ziface"
 )
 
@@ -43,10 +42,8 @@ func NewServer() ziface.IServer { // TODO 使用接口还是Server
 func (s *Server) Start() {
 	fmt.Printf("[Start] Server listenner at IP: %s, Port %d, is starting\n", s.IP, s.Port)
 	go func() {
-		// 0 查看全局配置
-		fmt.Println("host: " + utils.GlobalConfig.Host)
-		fmt.Println("name: " + utils.GlobalConfig.Name)
-		fmt.Println("version: " + utils.GlobalConfig.Version)
+		// 0 启动WorkerQueue
+		s.MsgHandler.StartWorkPoll()
 		// 1 获取TCP连接对象
 		addr, err := net.ResolveTCPAddr(s.IPVersion, fmt.Sprintf("%s:%d", s.IP, s.Port))
 		if err != nil {
@@ -71,7 +68,7 @@ func (s *Server) Start() {
 			}
 			// TODO 超过TCP连接数则关闭新连接
 			dealConn := NewConnection(conn, cid, s.MsgHandler)
-			cid++
+			cid++ //TODO 线程安全？？
 			go dealConn.Start()
 		}
 	}()

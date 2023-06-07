@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"zinx/src/zinx/utils"
 	"zinx/src/zinx/ziface"
 )
 
@@ -61,8 +62,8 @@ func (c *Connection) StartReader() {
 		// 1. 读Head
 		headData := make([]byte, dp.GetHeadLen())
 		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
-			fmt.Println("read msg head error ", err)
-			c.ExitBufChan <- true // TODO 给到退出消息后，主线程不能立马select到，这里会多次执行
+			fmt.Println("read msg head error ", err) //TODO 读取时没有相应的router会阻塞
+			c.ExitBufChan <- true                    // TODO 给到退出消息后，主线程不能立马select到，这里会多次执行
 			continue
 		}
 		// 2. 先解包Head
@@ -88,7 +89,12 @@ func (c *Connection) StartReader() {
 			conn: c,
 			msg:  msg,
 		}
-		go c.MsgHandler.DoMsgHandler(&req)
+		// 注意发送到taskQueue中不用起go
+		if utils.GlobalConfig.WorkerPoolSize > 0 {
+			c.MsgHandler.SendMsgToTaskQueue(&req)
+		} else {
+			go c.MsgHandler.DoMsgHandler(&req)
+		}
 	}
 }
 

@@ -16,7 +16,7 @@ type MsgHandler struct {
 func NewMsgHandle() *MsgHandler {
 	return &MsgHandler{
 		Apis:           make(map[uint32]ziface.IRouter),
-		WorkerPoolSize: 5, // TODO 配置读取
+		WorkerPoolSize: utils.GlobalConfig.WorkerPoolSize,
 		TaskQueue:      make([]chan ziface.IRequest, 10),
 	}
 }
@@ -60,6 +60,8 @@ func (m *MsgHandler) StartWorkPoll() {
 }
 
 func (m *MsgHandler) SendMsgToTaskQueue(req ziface.IRequest) {
-	//TODO implement me
-	panic("implement me")
+	//根据ConnID来分配当前的连接应该由哪个worker负责处理 轮询的平均分配法则
+	workerId := req.GetConnection().GetConnID() % m.WorkerPoolSize
+	fmt.Println("Add ConnID=", req.GetConnection().GetConnID(), " request msgID=", req.GetMsgId(), "to workerId=", workerId)
+	m.TaskQueue[workerId] <- req
 }
