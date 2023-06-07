@@ -51,6 +51,16 @@ func (c *Connection) StartWrite() {
 				fmt.Println("send data error!")
 				return
 			}
+		case data, ok := <-c.MsgBuffChan:
+			if ok {
+				//有数据要写给客户端
+				if _, err := c.Conn.Write(data); err != nil {
+					fmt.Println("Send Buff Data error:, ", err, " Conn Writer exit")
+					return
+				}
+			} else {
+				break
+			}
 		case <-c.ExitBufChan:
 			return
 		}
@@ -117,9 +127,21 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 		fmt.Println("[ERROR] Pack error msg id = ", msgId)
 		return errors.New("Pack error msg ")
 	}
-
-	//回写到客户端
 	c.MsgChan <- msgBytes
+	return nil
+}
+
+func (c *Connection) SendBuffMsg(msgId uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("connection closed when send msg")
+	}
+	dp := NewDataPack()
+	msgBytes, err := dp.Pack(NewMessage(msgId, data))
+	if err != nil {
+		fmt.Println("[ERROR] Pack error msg id = ", msgId)
+		return errors.New("Pack error msg ")
+	}
+	c.MsgBuffChan <- msgBytes
 	return nil
 }
 
