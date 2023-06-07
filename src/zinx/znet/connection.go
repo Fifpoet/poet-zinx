@@ -17,6 +17,7 @@ type Connection struct {
 	MsgHandler ziface.IMsgHandler
 	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
+	MsgChan     chan []byte
 }
 
 func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
@@ -26,12 +27,31 @@ func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler)
 		Conn:        conn,
 		ConnID:      connID,
 		ExitBufChan: make(chan bool, 1),
+		MsgChan:     make(chan []byte, 1),
 	}
 	return c
 }
 
+func (c *Connection) StartWrite() {
+	fmt.Println("[INFO] Write Goroutine is running")
+	for {
+		select {
+		case data := <-c.MsgChan:
+			// 开始读取
+			_, err := c.Conn.Write(data)
+			if err != nil {
+				fmt.Println("send data error!")
+				return
+			}
+		case <-c.ExitBufChan:
+			return
+		}
+	}
+}
+
+// StartReader 封装读写分离
 func (c *Connection) StartReader() {
-	fmt.Println("[INFO] Reader Gorountine is running")
+	fmt.Println("[INFO] Reader Goroutine is running")
 	defer fmt.Println("[INFO] Reader Closed")
 	defer c.Stop()
 
@@ -39,7 +59,7 @@ func (c *Connection) StartReader() {
 	for {
 		dp := NewDataPack()
 		// 1. 读Head
-		headData := make([]byte, dp.GetHeadLen()) //TODO ReadFull 函数, 需要指定slice的cap
+		headData := make([]byte, dp.GetHeadLen())
 		if _, err := io.ReadFull(c.GetTCPConnection(), headData); err != nil {
 			fmt.Println("read msg head error ", err)
 			c.ExitBufChan <- true
@@ -75,7 +95,8 @@ func (c *Connection) StartReader() {
 	}
 }
 
-// SendMsg 提供封包方法 快捷的把发送的[]byte转换为msg
+// SendMsg 提供封包方法 快捷的把发送的[]byte转换为msg.
+// v0.7 读写分离 写到msgChan即可
 func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	if c.isClosed == true {
 		return errors.New("connection closed when send msg")
@@ -88,16 +109,13 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 	}
 
 	//回写到客户端
-	if _, err := c.Conn.Write(msgBytes); err != nil {
-		fmt.Println("Write msg id {", msgId, "} error ")
-		c.ExitBufChan <- true
-		return errors.New("conn Write error")
-	}
+	c.MsgChan <- msgBytes
 	return nil
 }
 
 func (c *Connection) Start() {
 	go c.StartReader()
+	go c.StartWrite()
 	for {
 		select {
 		case <-c.ExitBufChan:
