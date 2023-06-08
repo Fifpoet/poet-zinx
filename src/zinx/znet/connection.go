@@ -11,6 +11,8 @@ import (
 
 // Connection 封装每一个连接，绑定对应的业务逻辑
 type Connection struct {
+	// conn可以感知隶属的server对象
+	TcpServer ziface.IServer
 	// TCP连接的原始套接字
 	Conn       *net.TCPConn
 	ConnID     uint32
@@ -19,17 +21,22 @@ type Connection struct {
 	// 在New函数中初始化为1 chan用于阻塞
 	ExitBufChan chan bool
 	MsgChan     chan []byte
+	// 有缓冲管道
+	MsgBuffChan chan []byte
 }
 
-func NewConnection(conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
+func NewConnection(server ziface.IServer, conn *net.TCPConn, connID uint32, handler ziface.IMsgHandler) *Connection {
 	c := &Connection{
+		TcpServer:   server,
 		isClosed:    false,
 		MsgHandler:  handler,
 		Conn:        conn,
 		ConnID:      connID,
 		ExitBufChan: make(chan bool, 1),
 		MsgChan:     make(chan []byte, 1),
+		MsgBuffChan: make(chan []byte),
 	}
+	c.TcpServer.GetConnManager().Add(c) // 获得server并add自己
 	return c
 }
 
@@ -43,6 +50,16 @@ func (c *Connection) StartWrite() {
 			if err != nil {
 				fmt.Println("send data error!")
 				return
+			}
+		case data, ok := <-c.MsgBuffChan:
+			if ok {
+				//有数据要写给客户端
+				if _, err := c.Conn.Write(data); err != nil {
+					fmt.Println("Send Buff Data error:, ", err, " Conn Writer exit")
+					return
+				}
+			} else {
+				break
 			}
 		case <-c.ExitBufChan:
 			return
@@ -110,9 +127,21 @@ func (c *Connection) SendMsg(msgId uint32, data []byte) error {
 		fmt.Println("[ERROR] Pack error msg id = ", msgId)
 		return errors.New("Pack error msg ")
 	}
-
-	//回写到客户端
 	c.MsgChan <- msgBytes
+	return nil
+}
+
+func (c *Connection) SendBuffMsg(msgId uint32, data []byte) error {
+	if c.isClosed == true {
+		return errors.New("connection closed when send msg")
+	}
+	dp := NewDataPack()
+	msgBytes, err := dp.Pack(NewMessage(msgId, data))
+	if err != nil {
+		fmt.Println("[ERROR] Pack error msg id = ", msgId)
+		return errors.New("Pack error msg ")
+	}
+	c.MsgBuffChan <- msgBytes
 	return nil
 }
 
@@ -139,8 +168,12 @@ func (c *Connection) Stop() {
 		return
 	}
 	c.ExitBufChan <- true
+	// 把conn从管理器中删除
+	c.TcpServer.GetConnManager().Remove(c)
 	// 释放连接中的chan
 	close(c.ExitBufChan)
+	close(c.MsgBuffChan)
+	close(c.MsgChan)
 }
 
 // GetConnID 获取封装的Connection对象ID
