@@ -23,7 +23,7 @@ func (dp *DataPack) GetHeadLen() uint32 {
 
 // Pack msg -> msgId + dataLen + data
 func (dp *DataPack) Pack(msg ziface.IMessage) ([]byte, error) {
-	// TODO ？与直接new byte的区别
+	// 缓冲区提升拼接速度
 	dataBuff := bytes.NewBuffer([]byte{})
 	//写dataLen
 	if err := binary.Write(dataBuff, binary.LittleEndian, msg.GetDataLen()); err != nil {

@@ -21,7 +21,7 @@ type Server struct {
 }
 
 // NewServer 更新硬编码为从json文件读取
-func NewServer() ziface.IServer { // TODO 使用接口还是Server
+func NewServer() ziface.IServer {
 	s := &Server{
 		Name:        "FIF",
 		IPVersion:   "tcp4",
@@ -67,7 +67,7 @@ func (s *Server) Start() {
 			}
 			dealConn := NewConnection(s, conn, cid, s.MsgHandler)
 			s.ConnManager.Add(dealConn)
-			cid++ //TODO 线程安全？？
+			cid++ //Server只调用一次 线程安全
 			go dealConn.Start()
 		}
 	}()
@@ -81,9 +81,7 @@ func (s *Server) Stop() {
 
 func (s *Server) Serve() {
 	s.Start()
-	// 启动后处理
-
-	// TODO 阻塞,否则主Go退出， listener的go将会退出. 忙循环的理由？
+	// 阻塞, 否则主Go退出, listener的go将会退出.
 	for {
 		time.Sleep(10 * time.Second)
 	}

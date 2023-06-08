@@ -8,7 +8,7 @@ import (
 
 type ConnManager struct {
 	connections map[uint32]ziface.IConnection // 私有 connID -> conn
-	connLock    sync.RWMutex                  // TODO Mutex
+	connLock    sync.RWMutex
 }
 
 func NewConnManager() *ConnManager {
